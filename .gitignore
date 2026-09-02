@@ -1,3 +1,4 @@
 intcoder
 *.o
-*.iobj
+*.intcodeOBJ
+*.intcode
