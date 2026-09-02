@@ -13,7 +13,7 @@ class Intcoder {
 	public:
 		int r1, r2, pc;
 		std::vector<int> program;
-		int *buf;
+		int buf[4] = {0, 0, 0, 0};
 		int progLen;
 		const char *filePath;
 
@@ -23,5 +23,6 @@ class Intcoder {
 		void loadInstruction();
 		int operation();
 		void process();
+		void printData();
 
 };

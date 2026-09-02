@@ -9,4 +9,7 @@ int main(int argc, char *argv[])
 	}
 
 	Intcoder ic = Intcoder(argv[1]);
+	ic.process();
+	ic.writeProgram();
+
 }
