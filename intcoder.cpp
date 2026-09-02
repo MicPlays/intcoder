@@ -16,6 +16,7 @@ Intcoder::Intcoder(const char* filePath)
 
 void Intcoder::loadProgram()
 {
+	this->program.clear();
 	std::stringstream pStream;
 	pStream << this->filePath << ".intcode";
 	std::ifstream programFile(pStream.str());
@@ -35,6 +36,17 @@ void Intcoder::loadProgram()
 		}
 		programFile.close();
 	}
+}
+
+void Intcoder::clearBuffers()
+{
+	this->pc = 0;
+       	this->r1 = 0;
+       	this->r2 = 0;
+	this->buf[0] = 0;
+	this->buf[1] = 0;
+	this->buf[2] = 0;
+	this->buf[3] = 0;
 }
 
 int Intcoder::writeProgram()
@@ -90,6 +102,59 @@ int Intcoder::operation()
 	}
 }
 
+void Intcoder::findInputs(int desiredOutput, int results[2])
+{
+	//load initial inputs into memory
+	int input1 = 0;
+	int input2 = 0;
+	bool stillProcessing = true;
+	bool success = false;
+	while (stillProcessing)
+	{
+		printf("Current Inputs: %i, %i\n", input1, input2);
+		process();
+		printf("Output: %i\n", program[0]);
+		//if output is not correct, adjust inputs, reload memory and try again
+		if (program[0] != desiredOutput)
+		{
+			//inputs are between 0 and 99 so if we exceed those limits we have failed
+			if (input1 >= 99 && input2 >= 99)
+			{
+				stillProcessing = false;
+				success = false;
+			}
+			if (input2 >= 99)
+			{
+				input2 = -1;
+				input1++;
+			}
+			input2++;
+			loadProgram();
+			clearBuffers();
+			program[1] = input1;
+			program[2] = input2;
+		}
+		else
+		{
+			stillProcessing = false;
+			success = true;
+		}
+	}
+	if (success)
+	{
+		printf("Correct inputs found!\n");
+		printf("Input 1: %i, Input 2: %i\n", program[1], program[2]);
+		results[0] = program[1]; 
+		results[1] = program[2];
+	}
+	else 
+	{
+		printf("Could not find correct inputs :(\n");
+		results[0] = -1;
+		results[1] = -1;
+	}
+}
+
 
 void Intcoder::process()
 {
@@ -106,17 +171,21 @@ void Intcoder::process()
 		int l1 = 0;
 		int l2 = 0;
 		int l3 = 0;
+		//values 2, 3, and 4 in buffer are memory locations
+		//get input values through program counter
 		l1 = buf[1] - pc;
 		r1 = program[pc + l1];
 		l2 = buf[2] - pc;
 		r2 = program[pc + l2];
 
+		//do operation
 		int result = operation();
 		if (result == -1) 
 		{
 			printf("Program error: opcode does not match any entries in optable\n");
 			exit(0);
 		}
+		//store result by getting memory location and writing
 		l3 = buf[3] - pc;
 		program[pc + l3] = result;
 		pc += 4;

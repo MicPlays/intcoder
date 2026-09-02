@@ -9,7 +9,9 @@ int main(int argc, char *argv[])
 	}
 
 	Intcoder ic = Intcoder(argv[1]);
-	ic.process();
+	int results[2] = {0, 0}; 
+	ic.findInputs(19690720, results);
+	if (results[0] == -1 && results[1] == -1) exit(0);
 	ic.writeProgram();
 
 }

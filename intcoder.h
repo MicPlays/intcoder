@@ -24,5 +24,7 @@ class Intcoder {
 		int operation();
 		void process();
 		void printData();
+		void findInputs(int desiredOutput, int results[2]);
+		void clearBuffers();
 
 };
