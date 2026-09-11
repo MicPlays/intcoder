@@ -111,6 +111,38 @@ void Intcoder::operation(int opcode, int params, int mask)
 			pc += 2;
 			break;
 		}
+		case 5:
+		{
+			if (buf[0] != 0)
+				pc = buf[1];
+			else pc += 3;
+			break;
+		}
+		case 6:
+		{
+			if (buf[0] == 0)
+				pc = buf[1];
+			else pc += 3;
+			break;
+		}
+		case 7:
+		{
+			buf[2] = program[pc + (params+1)];
+			if (buf[0] < buf[1])
+				program[buf[2]] = 1;
+			else program[buf[2]] = 0;
+			pc += 4;
+			break;
+		}
+		case 8:
+		{
+			buf[2] = program[pc + (params+1)];
+			if (buf[0] == buf[1])
+				program[buf[2]] = 1;
+			else program[buf[2]] = 0;
+			pc += 4;
+			break;
+		}
 		default:
 		{
 			printf("Error\n");
@@ -208,12 +240,19 @@ int Intcoder::getOpcode(int inst)
 
 int Intcoder::getOpcodeParams(int opcode)
 {
+	//For instructions that write to a position, we don't include that last parameter in return value, as it will always be
+	//in position mode. We handle that special case in the instruction logic in operation() as rather than needing to retrieve
+	//the value at the position, we want to write to that position.
 	switch (opcode)
 	{
 		case 1: return 2;
 		case 2: return 2;
 		case 3: return 0;
 		case 4: return 1;
+		case 5: return 2;
+		case 6: return 2;
+		case 7: return 2;
+		case 8: return 2;
 		default: return -1;
 	}
 }
