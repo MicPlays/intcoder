@@ -1,4 +1,5 @@
 #include "intcoder.h"
+#include <bitset>
 
 Intcoder::Intcoder(const char* filePath)
 {
@@ -6,12 +7,6 @@ Intcoder::Intcoder(const char* filePath)
 	this->program = std::vector<int>(); 
 	loadProgram();
 	this->pc = 0;
-       	this->r1 = 0;
-       	this->r2 = 0;
-	this->buf[0] = 0;
-	this->buf[1] = 0;
-	this->buf[2] = 0;
-	this->buf[3] = 0;
 }
 
 void Intcoder::loadProgram()
@@ -36,17 +31,6 @@ void Intcoder::loadProgram()
 		}
 		programFile.close();
 	}
-}
-
-void Intcoder::clearBuffers()
-{
-	this->pc = 0;
-       	this->r1 = 0;
-       	this->r2 = 0;
-	this->buf[0] = 0;
-	this->buf[1] = 0;
-	this->buf[2] = 0;
-	this->buf[3] = 0;
 }
 
 int Intcoder::writeProgram()
@@ -79,26 +63,60 @@ int Intcoder::writeProgram()
 	}
 }
 
-void Intcoder::loadInstruction()
-{
-	std::vector<int>::iterator it = program.begin() + pc;
-	for (int i = 0; i < 4; i++)
-	{
-		if (it != program.end())
-		{
-			buf[i] = *it;
-			it++;
-		}
-	}
-}
 
-int Intcoder::operation()
+void Intcoder::operation(int opcode, int params, int mask)
 {
-	switch (buf[0])
+	//bitmask value
+	int j = 1;
+	//program index is 1 higher than i because of opcode
+	int progIndex = pc + 1;
+	for (int i = 0; i < params; i++)
 	{
-		case (1): return r1 + r2;
-		case (2): return r1 * r2;
-		default: return -1;
+		//immediate mode
+		if (mask & j) buf[i] = program[progIndex + i];
+		//position mode
+		else buf[i] = program[program[progIndex + i]];	
+		j *= 2;
+	}
+	switch (opcode)
+	{
+		case 1:
+		{
+			int result = buf[0] + buf[1];
+			buf[2] = program[pc + (params+1)];
+			program[buf[2]] = result;
+			pc += 4;
+			break;
+		}
+		case 2:
+		{
+			int result = buf[0] * buf[1];
+			buf[2] = program[pc + (params+1)];
+			program[buf[2]] = result;
+			pc += 4;
+			break;
+		}
+		case 3:
+		{
+			int input = 0;
+			printf("Program input: ");
+			std::cin >> input;
+			program[program[pc + 1]] = input;
+			pc += 2;
+			break;
+		}
+		case 4:
+		{
+			std::cout << buf[0] << std::endl;
+			pc += 2;
+			break;
+		}
+		default:
+		{
+			printf("Error\n");
+			exit(0);
+		}
+
 	}
 }
 
@@ -130,7 +148,6 @@ void Intcoder::findInputs(int desiredOutput, int results[2])
 			}
 			input2++;
 			loadProgram();
-			clearBuffers();
 			program[1] = input1;
 			program[2] = input2;
 		}
@@ -161,46 +178,85 @@ void Intcoder::process()
 	bool stillProcessing = true;
 	while (stillProcessing)
 	{
-		loadInstruction();
-		//if opcode 99 halt
-		if (buf[0] == 99) 
+		if (program[pc] == 99)
 		{
 			stillProcessing = false;
 			continue;
 		}
-		int l1 = 0;
-		int l2 = 0;
-		int l3 = 0;
-		//values 2, 3, and 4 in buffer are memory locations
-		//get input values through program counter
-		l1 = buf[1] - pc;
-		r1 = program[pc + l1];
-		l2 = buf[2] - pc;
-		r2 = program[pc + l2];
-
-		//do operation
-		int result = operation();
-		if (result == -1) 
+		if (program[pc] > 99) 
 		{
-			printf("Program error: opcode does not match any entries in optable\n");
-			exit(0);
+			int opcode = getOpcode(program[pc]);
+			int params = getOpcodeParams(opcode);
+			int mask = getParamMask(program[pc], opcode, params);
+			//printData(opcode, params, mask);
+			operation(opcode, params, mask);
 		}
-		//store result by getting memory location and writing
-		l3 = buf[3] - pc;
-		program[pc + l3] = result;
-		pc += 4;
+		else
+		{
+			int opcode = program[pc];
+			int params = getOpcodeParams(opcode);
+			//printData(opcode, params, 0);
+			operation(opcode, params, 0);
+		}
 	}
 }
 
-void Intcoder::printData()
+int Intcoder::getOpcode(int inst)
 {
-	printf("Buffer: ");
-	for (int i = 0; i < 3; i++)
-		std::cout << buf[i] << ",";
-	std::cout << buf[3] << std::endl;
+	return inst % 100;
+}
+
+int Intcoder::getOpcodeParams(int opcode)
+{
+	switch (opcode)
+	{
+		case 1: return 2;
+		case 2: return 2;
+		case 3: return 0;
+		case 4: return 1;
+		default: return -1;
+	}
+}
+
+int Intcoder::getParamMask(int inst, int opcode, int params)
+{
+	//extract parameter bits as string
+	if (params == 0) return 0;
+	int paramNum = (inst - opcode) /100;
+	std::string paramStr = std::to_string(paramNum);
+	int leadingZeroes = params - paramStr.size();
+	std::stringstream stream;
+	if (leadingZeroes > 0)
+	{
+		for (int i = 0; i < leadingZeroes; i++)
+			stream << "0";
+	}
+	stream << paramStr;
 	
-	printf("Registers: ");
-	printf("R1: %i, R2: %i\n", r1, r2);
+	//parse and bitmask into integer
+	std::string maskStr = stream.str();
+	int mask = 0;
+	int j = 0;
+	stream.clear();
+	stream.str("");
+	for (int i = maskStr.size() - 1; i > -1; i--)
+	{
+	      	int bit = 0;
+		stream << maskStr[i];
+		stream >> bit;
+		mask += bit << j;
+		j++;
+		stream.clear();
+		stream.str("");		
+	}
+	return mask;
+}
+
+void Intcoder::printData(int opcode, int params, int mask)
+{
+	printf("Opcode: %i\n", opcode);
+	printf("# of Params: %i\n", params);
+	std::cout << "Mask: " << std::bitset<4>(mask) << std::endl;
 
 	printf("Program: ");
 	std::vector<int>::iterator it;

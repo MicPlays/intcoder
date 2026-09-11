@@ -7,24 +7,24 @@
 #include <cstdio>
 #include <vector>
 
-
 class Intcoder {
 	
 	public:
-		int r1, r2, pc;
+		int pc;
+		int buf[4] = {0,0,0,0};
 		std::vector<int> program;
-		int buf[4] = {0, 0, 0, 0};
 		int progLen;
 		const char *filePath;
 
 		Intcoder(const char* filePath);
 		void loadProgram();
 		int writeProgram();
-		void loadInstruction();
-		int operation();
+		void operation(int opcode, int params, int mask);
 		void process();
-		void printData();
+		void printData(int opcode, int params, int mask);
 		void findInputs(int desiredOutput, int results[2]);
-		void clearBuffers();
+		int getOpcodeParams(int opcode);
+		int getOpcode(int inst);
+		int getParamMask(int inst, int opcode, int params);	
 
 };
