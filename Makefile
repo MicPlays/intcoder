@@ -1,12 +1,16 @@
-intcoder: intcoder.o main.cpp
-	g++ -o intcoder intcoder.o main.cpp
+intcoder: intcoder.o main.cpp amplifiercontroller.o
+	g++ -o intcoder intcoder.o amplifiercontroller.o main.cpp
 
 intcoder.o: intcoder.cpp intcoder.h
 	g++ -o intcoder.o -c intcoder.cpp
 
+amplifiercontroller.o: amplifiercontroller.cpp amplifiercontroller.h
+	g++ -o amplifiercontroller.o -c amplifiercontroller.cpp
+
 debug: main.cpp intcoder.h intcoder.cpp
 	g++ -Wall -o intcoder.o -g -c intcoder.cpp
-	g++ -Wall -o intcoder -g intcoder.o main.cpp 
+	g++ -Wall -o amplifiercontroller.o -g -c amplifiercontroller.cpp
+	g++ -Wall -o intcoder -g intcoder.o amplifiercontroller.o main.cpp 
 
 clean:
 	rm -rf intcoder
