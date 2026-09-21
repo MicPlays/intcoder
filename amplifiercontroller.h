@@ -2,11 +2,12 @@
 
 #include <thread>
 #include <iostream>
-#include <mutex>
-#include <functional>
+#include <condition_variable>
 #include <stack>
 #include <queue>
 #include <string>
+#include "semaphore.h"
+#include "intcoder.h"
 
 class CodeStack {
 	private:
@@ -79,5 +80,11 @@ class AmplifierController {
 		CodeQueue q;
 		void generateCodes();
 		void readCodes();
-		AmplifierController();		
+
+		//Semaphore sm;
+		std::thread threads[5];
+		Intcoder intcoders[5];
+		void intcoderProcess(int coderIndex, std::string code);
+
+		AmplifierController(const char* filePath);		
 };

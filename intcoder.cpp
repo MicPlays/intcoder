@@ -5,7 +5,6 @@ Intcoder::Intcoder(const char* filePath)
 {
 	this->filePath = filePath;
 	this->program = std::vector<int>(); 
-	loadProgram();
 	this->pc = 0;
 }
 
@@ -63,6 +62,15 @@ int Intcoder::writeProgram()
 	}
 }
 
+void Intcoder::clearBuffers()
+{
+	pc = 0;
+	buf[0] = 0;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = 0;
+}
+
 
 void Intcoder::operation(int opcode, int params, int mask)
 {
@@ -98,16 +106,21 @@ void Intcoder::operation(int opcode, int params, int mask)
 		}
 		case 3:
 		{
-			int input = 0;
-			printf("Program input: ");
-			std::cin >> input;
+			if (inputBufCount > inputBufSize)
+			{
+				printf("INTCODER: Went outside input buffer\n");
+				exit(0);
+			}
+			int input = this->inputBuf[inputBufCount];
+			inputBufCount++;
 			program[program[pc + 1]] = input;
 			pc += 2;
 			break;
 		}
 		case 4:
 		{
-			std::cout << buf[0] << std::endl;
+			this->output = buf[0];
+			printf("WRITING OUTPUT: %i\n", this->output);
 			pc += 2;
 			break;
 		}
@@ -152,6 +165,7 @@ void Intcoder::operation(int opcode, int params, int mask)
 	}
 }
 
+/*
 void Intcoder::findInputs(int desiredOutput, int results[2])
 {
 	//load initial inputs into memory
@@ -203,10 +217,14 @@ void Intcoder::findInputs(int desiredOutput, int results[2])
 		results[1] = -1;
 	}
 }
+*/
 
-
-void Intcoder::process()
+int Intcoder::process(int *inputs, int size)
 {
+	clearBuffers();
+	this->inputBuf = inputs;
+	this->inputBufSize = size;
+	this->inputBufCount = 0;
 	bool stillProcessing = true;
 	while (stillProcessing)
 	{
@@ -231,6 +249,8 @@ void Intcoder::process()
 			operation(opcode, params, 0);
 		}
 	}
+	printData(0, 0, 0);
+	return this->output;
 }
 
 int Intcoder::getOpcode(int inst)
@@ -293,9 +313,9 @@ int Intcoder::getParamMask(int inst, int opcode, int params)
 
 void Intcoder::printData(int opcode, int params, int mask)
 {
-	printf("Opcode: %i\n", opcode);
-	printf("# of Params: %i\n", params);
-	std::cout << "Mask: " << std::bitset<4>(mask) << std::endl;
+	//printf("Opcode: %i\n", opcode);
+	//printf("# of Params: %i\n", params);
+	//std::cout << "Mask: " << std::bitset<4>(mask) << std::endl;
 
 	printf("Program: ");
 	std::vector<int>::iterator it;

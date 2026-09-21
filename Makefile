@@ -4,7 +4,7 @@ intcoder: intcoder.o main.cpp amplifiercontroller.o
 intcoder.o: intcoder.cpp intcoder.h
 	g++ -o intcoder.o -c intcoder.cpp
 
-amplifiercontroller.o: amplifiercontroller.cpp amplifiercontroller.h
+amplifiercontroller.o: amplifiercontroller.cpp amplifiercontroller.h intcoder.h semaphore.h
 	g++ -o amplifiercontroller.o -c amplifiercontroller.cpp
 
 debug: main.cpp intcoder.h intcoder.cpp
@@ -15,4 +15,5 @@ debug: main.cpp intcoder.h intcoder.cpp
 clean:
 	rm -rf intcoder
 	rm -rf intcoder.o
+	rm -rf amplifiercontroller.o
 	rm -rf *.intcodeOBJ
