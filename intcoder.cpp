@@ -120,7 +120,6 @@ void Intcoder::operation(int opcode, int params, int mask)
 		case 4:
 		{
 			this->output = buf[0];
-			printf("WRITING OUTPUT: %i\n", this->output);
 			pc += 2;
 			break;
 		}
@@ -249,7 +248,6 @@ int Intcoder::process(int *inputs, int size)
 			operation(opcode, params, 0);
 		}
 	}
-	printData(0, 0, 0);
 	return this->output;
 }
 

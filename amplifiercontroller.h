@@ -6,6 +6,7 @@
 #include <stack>
 #include <queue>
 #include <string>
+#include <mutex>
 #include "semaphore.h"
 #include "intcoder.h"
 
@@ -41,11 +42,12 @@ class CodeStack {
 				exit(0);
 			}
 		}
-		void writeStack()
+		std::string writeStack()
 		{
+			std::string code = "";
 			for (int i = 0; i < stackPointer + 1; i++)
-				printf("%c", stack[i]);
-			printf("\n");
+				code.push_back(stack[i]);
+			return code;
 		}
 		CodeStack() {this->stackPointer = 0;}
 };
@@ -79,12 +81,19 @@ class AmplifierController {
 		CodeStack s;
 		CodeQueue q;
 		void generateCodes();
-		void readCodes();
 
-		//Semaphore sm;
+		std::mutex readMtx;
+		std::mutex writeMtx;
+		
+		std::string readCode();
+		void writeSignal(int signal);
+
 		std::thread threads[5];
 		Intcoder intcoders[5];
-		void intcoderProcess(int coderIndex, std::string code);
+		std::queue<std::string> codes;
+		std::vector<int> signals;
+		void intcoderProcess(int coderIndex);
+		int getMaxSignal();
 
 		AmplifierController(const char* filePath);		
 };
