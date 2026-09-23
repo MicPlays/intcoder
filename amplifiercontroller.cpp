@@ -8,8 +8,8 @@ AmplifierController::AmplifierController(const char* filePath)
 
 	for (int i = 0; i < 5; i++)
 	{
-		this->intcoders[i] = Intcoder(filePath);
-		this->threads[i] = std::thread(&AmplifierController::intcoderProcess, this, i);
+		this->amps[i] = Amplifier(filePath);
+		this->threads[i] = std::thread(&AmplifierController::amplifierProcess, this, i);
 		this->threads[i].join();
 	}
 	while (!codes.empty()){}
@@ -34,39 +34,22 @@ void AmplifierController::generateCodes()
 	}
 }
 
-void AmplifierController::intcoderProcess(int coderIndex)
+void AmplifierController::amplifierProcess(int ampIndex)
 {
 	while(!codes.empty())
 	{
-		//attempt acquire read lock (blocks if not available)
-		std::string code = readCode();
-				
-		int output = 0;
-		std::string codeCopy = code;
-		std::stringstream stream;
-		for (int i = 0; i < 5; i++)
+		if (amps[i].signal != 0)
 		{
-			//reload program into intcoder memory
-			intcoders[coderIndex].loadProgram();
-
-			int numCode;
-			stream << codeCopy[0];
-			stream >> numCode;
-			stream.clear();
-			stream.str("");
-			int inputs[2] = {numCode, output};
-
-			output = intcoders[coderIndex].process(inputs, 2);
-
-			//strip leading digit of code
-			codeCopy = codeCopy.substr(1);
-			
+			writeSignal(amps[ampIndex].signal);
+			amps[ampIndex].signal = 0;
 		}
-	//	std::cout << "Input: " << code << ", ";
-	//	std::cout << "Output: " << output << std::endl;
 
-		//attempt acquire write lock (blocks if not available)
-		writeSignal(output);
+		//for first unit test, just keep feeding codes as long as first intcoder is available and we have codes to process
+		std::string code = readCode();
+		amps[ampIndex].setCode(0, code);
+		amps[ampIndex].sem_used[0].give(0);
+		
+		std::scoped_lock<std::mutex> lock(amps[ampIndex].signalMtx);
 	}
 }
 
