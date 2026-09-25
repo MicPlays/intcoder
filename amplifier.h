@@ -4,11 +4,11 @@
 #include <iostream>
 #include <string>
 #include <mutex>
-#include <array>
+#include <condition_variable>
+#include <queue>
 #include "intcoder.h"
 #include "semaphore.h"
-
-constexpr int NUM_THREADS = 5;
+#include "amplifiercontroller.h"
 
 class Amplifier {
 	private:
@@ -17,21 +17,23 @@ class Amplifier {
 	public:
 
 		Amplifier() {}
-		Amplifier(const char* filepath); 
+		Amplifier(const char* filepath, AmplifierController *ac); 
 		~Amplifier();
 
-		std::array<Intcoder, NUM_THREADS> intcoders;
-		std::array<std::thread, NUM_THREADS> threads;
+		Intcoder intcoders[5];
 
-		std::array<DataSemaphore, NUM_THREADS> sem_used;
-		std::array<Semaphore, NUM_THREADS> sem_free;
+		Semaphore sem_used[5];
+		Semaphore sem_free[5];
+
+		std::thread threads[5];
+
+		int buf[5];
 
 		std::mutex codeMtx;
-		std::mutex signalMtx;
+		
+		AmplifierController *ac;		
 
-		int signal;
-		bool stop = false;
-
+		void run();
 		void intcoderProcess(int coderIndex);
 		std::string getCode(int index);
 		void setCode(int index, std::string code);

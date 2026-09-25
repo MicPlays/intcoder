@@ -1,21 +1,10 @@
 #include "amplifiercontroller.h"
 
-AmplifierController::AmplifierController(const char* filePath)
+AmplifierController::AmplifierController()
 {
 	this->s = CodeStack();
 	this->q = CodeQueue("01234");
 	generateCodes();
-
-	for (int i = 0; i < 5; i++)
-	{
-		this->amps[i] = Amplifier(filePath);
-		this->threads[i] = std::thread(&AmplifierController::amplifierProcess, this, i);
-		this->threads[i].join();
-	}
-	while (!codes.empty()){}
-	int max = getMaxSignal();
-	printf("Max: %i\n", max);
-	
 }
 
 void AmplifierController::generateCodes()
@@ -34,30 +23,12 @@ void AmplifierController::generateCodes()
 	}
 }
 
-void AmplifierController::amplifierProcess(int ampIndex)
-{
-	while(!codes.empty())
-	{
-		if (amps[i].signal != 0)
-		{
-			writeSignal(amps[ampIndex].signal);
-			amps[ampIndex].signal = 0;
-		}
-
-		//for first unit test, just keep feeding codes as long as first intcoder is available and we have codes to process
-		std::string code = readCode();
-		amps[ampIndex].setCode(0, code);
-		amps[ampIndex].sem_used[0].give(0);
-		
-		std::scoped_lock<std::mutex> lock(amps[ampIndex].signalMtx);
-	}
-}
-
 int AmplifierController::getMaxSignal()
 {
 	int max = signals[0];
 	for (int i = 0; i < signals.size(); i++)
 	{
+		printf("%i\n", signals[i]);
 		if (signals[i] > max)
 			max = signals[i];
 	}

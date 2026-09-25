@@ -7,7 +7,6 @@
 #include <queue>
 #include <string>
 #include <mutex>
-#include "amplifier.h"
 
 class CodeStack {
 	private:
@@ -88,12 +87,9 @@ class AmplifierController {
 		std::string readCode();
 		void writeSignal(int signal);
 
-		std::thread threads[5];
-		Amplifier amps[5];
 		std::queue<std::string> codes;
 		std::vector<int> signals;
-		void amplifierProcess(int ampIndex);
 		int getMaxSignal();
 
-		AmplifierController(const char* filePath);		
+		AmplifierController();		
 };
