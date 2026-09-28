@@ -6,6 +6,7 @@ Intcoder::Intcoder(const char* filePath)
 	this->filePath = filePath;
 	this->program = std::vector<int>(); 
 	this->pc = 0;
+	this->done = false;
 }
 
 void Intcoder::loadProgram()
@@ -69,6 +70,7 @@ void Intcoder::clearBuffers()
 	buf[1] = 0;
 	buf[2] = 0;
 	buf[3] = 0;
+	done = false;
 }
 
 
@@ -220,7 +222,6 @@ void Intcoder::findInputs(int desiredOutput, int results[2])
 
 int Intcoder::process(int *inputs, int size)
 {
-	clearBuffers();
 	this->inputBuf = inputs;
 	this->inputBufSize = size;
 	this->inputBufCount = 0;
@@ -229,6 +230,7 @@ int Intcoder::process(int *inputs, int size)
 	{
 		if (program[pc] == 99)
 		{
+			done = true;
 			stillProcessing = false;
 			continue;
 		}
@@ -246,6 +248,12 @@ int Intcoder::process(int *inputs, int size)
 			int params = getOpcodeParams(opcode);
 			//printData(opcode, params, 0);
 			operation(opcode, params, 0);
+
+			if (program[pc-2] == 4)
+			{
+				stillProcessing = false;
+				continue;
+			}
 		}
 	}
 	return this->output;
