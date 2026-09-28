@@ -18,7 +18,6 @@ class Amplifier {
 
 		Amplifier() {}
 		Amplifier(const char* filepath, AmplifierController *ac); 
-		~Amplifier();
 
 		Intcoder intcoders[5];
 

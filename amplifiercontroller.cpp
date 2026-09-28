@@ -28,7 +28,6 @@ int AmplifierController::getMaxSignal()
 	int max = signals[0];
 	for (int i = 0; i < signals.size(); i++)
 	{
-		printf("%i\n", signals[i]);
 		if (signals[i] > max)
 			max = signals[i];
 	}
