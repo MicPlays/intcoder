@@ -10,7 +10,9 @@ Amplifier::Amplifier(const char* filePath, AmplifierController *ac)
 	for (int i = 0; i < 5; i++)
 	{
 		this->intcoders[i] = Intcoder(filePath);
+		this->intcoders[i].loadProgram();
 		this->ac = ac;
+		this->loopDone = false;
 	}
 }
 
@@ -24,7 +26,7 @@ void Amplifier::run()
 
 	//pop code from queue
 	std::string code = ac->readCode();
-	setCode(0, code);
+	setCode(code);
 
 	//start threads
 	for (int i = 0; i < 5; i++)
@@ -38,31 +40,31 @@ void Amplifier::run()
 	bool done = false;
 	while (ac->signals.size() != size)
 	{
-		if (code != getCode(0))
+		if (loopDone)
 		{
 			if (!ac->codes.empty())
 			{
 				sem_free[0].take();
+				buf[0] = 0;
+				loopDone = false;
 				code = ac->readCode();
-				setCode(0, code);
+				setCode(code);
 				sem_used[0].give();
 			}
-			else if (!done)
-			{
-				sem_free[0].take();
-				buf[0] = -1;
-				done = true;
-				setCode(0, "");
-				sem_used[0].give();
-			}
+		
 		}
 	}
+	//terminate threads
+	sem_free[0].take();
+	buf[0] = -1;
+	done = true;
+	setCode("");
+	sem_used[0].give();
+	for (int i = 0; i < 5; i++) threads[i].join();
+
 	int max = ac->getMaxSignal();
 	printf("Max: %i\n", max);
-	for (int i = 0; i < 5; i++)
-	{
-		threads[i].join();	
-	}
+
 }
 
 void Amplifier::intcoderProcess(int coderIndex)
@@ -70,7 +72,6 @@ void Amplifier::intcoderProcess(int coderIndex)
 	while (true)
 	{
 		//consume input in buffer
-		//printf("Thread %i waiting to consume\n", coderIndex);
 		sem_used[coderIndex].take();
 
 		//termination condition
@@ -86,61 +87,82 @@ void Amplifier::intcoderProcess(int coderIndex)
 			return;
 		}
 	
-		std::string codeCopy = getCode(coderIndex);
-		setCode(coderIndex, "");
-
+		std::string codeCopy = getCode();
 		std::stringstream stream;
+		int output;
+		bool useCode = codeCopy.size() > 0;
+		if (useCode)
+		{
+			int numCode;
+			stream << codeCopy[0];
+			stream >> numCode;
+			stream.clear();
+			stream.str("");
+			int inputs[2] = {numCode, input};
+		
 
-		int numCode;
-		stream << codeCopy[0];
-		stream >> numCode;
-		stream.clear();
-		stream.str("");
-		int inputs[2] = {numCode, input};
-	
-		intcoders[coderIndex].loadProgram();
-		int output = intcoders[coderIndex].process(inputs, 2);
-
+			output = intcoders[coderIndex].process(inputs, 2);
+		}
+		else output = intcoders[coderIndex].process(&input, 1);
 		if (coderIndex < 4)
 		{
-
 			sem_free[coderIndex + 1].take();
 			//strip leading digit of code
-			//printf("Thread %i about to substr\n", coderIndex);
-			setCode(coderIndex + 1, codeCopy.substr(1));
+			if (useCode) setCode(codeCopy.substr(1));
 			//write output to next buffer
-			//printf("Thread %i writing output\n", coderIndex);
 			buf[coderIndex + 1] = output;
 			
+			if (intcoders[coderIndex].done)
+			{
+				intcoders[coderIndex].clearBuffers();
+				intcoders[coderIndex].loadProgram();
+			}
+
 			//notify we are ready to receive another input
 			sem_used[coderIndex + 1].give();
 			sem_free[coderIndex].give();
 
-			//printf("Thread %i done, giving back mutex\n", coderIndex);
-
 		}
-		//for last intcoder we want to write output for now
-		else
+		else 
 		{
-			ac->writeSignal(output);
-			sem_free[coderIndex].give();
+			if (!intcoders[coderIndex].done)
+			{
+				sem_free[0].take();
+				
+				//done with code
+				if (useCode) setCode("");
+
+				//write output to starting buffer
+				buf[0] = output;
+				
+				//notify we are ready to receive another input
+				sem_used[0].give();
+				sem_free[coderIndex].give();
+
+			}
+			else 
+			{
+				//write output to amplifier controller
+				ac->writeSignal(output);
+				intcoders[coderIndex].clearBuffers();
+				intcoders[coderIndex].loadProgram();
+				loopDone = true;
+				//notify this intcoder is free for more input
+				sem_free[coderIndex].give();
+			}
 		}
 	}
 }
 
-std::string Amplifier::getCode(int index)
+std::string Amplifier::getCode()
 {
-	std::string code;
-	{
-		std::scoped_lock<std::mutex> lock(codeMtx);
-		code = codes[index];
-	}
-	return code;
+	std::scoped_lock<std::mutex> lock(codeMtx);
+	return this->code;
 	
 }
 
-void Amplifier::setCode(int index, std::string code)
+void Amplifier::setCode(std::string code)
 {
 	std::scoped_lock<std::mutex> lock(codeMtx);
-	codes[index] = code;	
+	this->code = code;
 }

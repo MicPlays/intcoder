@@ -12,7 +12,7 @@
 
 class Amplifier {
 	private:
-		std::string codes[5];
+		std::string code;
 
 	public:
 
@@ -32,9 +32,11 @@ class Amplifier {
 		
 		AmplifierController *ac;		
 
+		bool loopDone;
+
 		void run();
 		void intcoderProcess(int coderIndex);
-		std::string getCode(int index);
-		void setCode(int index, std::string code);
+		std::string getCode();
+		void setCode(std::string code);
 
 };

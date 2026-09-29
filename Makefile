@@ -4,7 +4,7 @@ intcoder: intcoder.o main.cpp amplifier.o amplifiercontroller.o
 intcoder.o: intcoder.cpp intcoder.h
 	g++ -o intcoder.o -c intcoder.cpp
 
-amplifier.o: amplifier.h intcoder.h semaphore.h
+amplifier.o: amplifier.h intcoder.h semaphore.h amplifier.cpp
 	g++ -o amplifier.o -c amplifier.cpp
 
 amplifiercontroller.o: amplifiercontroller.cpp amplifiercontroller.h amplifier.h

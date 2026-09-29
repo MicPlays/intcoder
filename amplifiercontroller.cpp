@@ -3,12 +3,13 @@
 AmplifierController::AmplifierController()
 {
 	this->s = CodeStack();
-	this->q = CodeQueue("01234");
+	this->q = CodeQueue("56789");
 	generateCodes();
 }
 
 void AmplifierController::generateCodes()
 {
+	
 	int queueSize = q.size();
 	for (int i = 0; i < queueSize; i++)
 	{
@@ -21,6 +22,7 @@ void AmplifierController::generateCodes()
 		else generateCodes();
 		q.push(s.pop());
 	}
+	
 }
 
 int AmplifierController::getMaxSignal()

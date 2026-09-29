@@ -19,6 +19,7 @@ class Intcoder {
 		int inputBufCount;
 
 		int output;
+		bool done;
 
 		std::vector<int> program;
 		int progLen;
