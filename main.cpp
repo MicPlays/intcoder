@@ -1,4 +1,5 @@
 #include "intcoder.h"
+#include "amplifier.h"
 #include "amplifiercontroller.h"
 
 int main(int argc, char *argv[])
@@ -8,9 +9,9 @@ int main(int argc, char *argv[])
 		printf("usage: ./intcoder 'filepath' (DONT INCLUDE EXTENSION\n");
 		exit(0);
 	}
-	AmplifierController ac = AmplifierController(argv[1]);
-	//Intcoder ic = Intcoder(argv[1]);
-	//ic.process();
-	//ic.writeProgram();
+	AmplifierController ac = AmplifierController();
+	Amplifier a(argv[1], &ac);
+	std::thread t1(&Amplifier::run, &a);
+	t1.join();
 
 }

@@ -1,21 +1,10 @@
 #include "amplifiercontroller.h"
 
-AmplifierController::AmplifierController(const char* filePath)
+AmplifierController::AmplifierController()
 {
 	this->s = CodeStack();
 	this->q = CodeQueue("01234");
 	generateCodes();
-
-	for (int i = 0; i < 5; i++)
-	{
-		this->intcoders[i] = Intcoder(filePath);
-		this->threads[i] = std::thread(&AmplifierController::intcoderProcess, this, i);
-		this->threads[i].join();
-	}
-	while (!codes.empty()){}
-	int max = getMaxSignal();
-	printf("Max: %i\n", max);
-	
 }
 
 void AmplifierController::generateCodes()
@@ -31,42 +20,6 @@ void AmplifierController::generateCodes()
 		}
 		else generateCodes();
 		q.push(s.pop());
-	}
-}
-
-void AmplifierController::intcoderProcess(int coderIndex)
-{
-	while(!codes.empty())
-	{
-		//attempt acquire read lock (blocks if not available)
-		std::string code = readCode();
-				
-		int output = 0;
-		std::string codeCopy = code;
-		std::stringstream stream;
-		for (int i = 0; i < 5; i++)
-		{
-			//reload program into intcoder memory
-			intcoders[coderIndex].loadProgram();
-
-			int numCode;
-			stream << codeCopy[0];
-			stream >> numCode;
-			stream.clear();
-			stream.str("");
-			int inputs[2] = {numCode, output};
-
-			output = intcoders[coderIndex].process(inputs, 2);
-
-			//strip leading digit of code
-			codeCopy = codeCopy.substr(1);
-			
-		}
-	//	std::cout << "Input: " << code << ", ";
-	//	std::cout << "Output: " << output << std::endl;
-
-		//attempt acquire write lock (blocks if not available)
-		writeSignal(output);
 	}
 }
 

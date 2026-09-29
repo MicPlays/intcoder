@@ -7,8 +7,6 @@
 #include <queue>
 #include <string>
 #include <mutex>
-#include "semaphore.h"
-#include "intcoder.h"
 
 class CodeStack {
 	private:
@@ -78,6 +76,7 @@ class CodeQueue {
 class AmplifierController {
 
 	public:
+		const int numAmplifiers = 5;
 		CodeStack s;
 		CodeQueue q;
 		void generateCodes();
@@ -88,12 +87,9 @@ class AmplifierController {
 		std::string readCode();
 		void writeSignal(int signal);
 
-		std::thread threads[5];
-		Intcoder intcoders[5];
 		std::queue<std::string> codes;
 		std::vector<int> signals;
-		void intcoderProcess(int coderIndex);
 		int getMaxSignal();
 
-		AmplifierController(const char* filePath);		
+		AmplifierController();		
 };
