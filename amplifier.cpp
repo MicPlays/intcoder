@@ -1,12 +1,13 @@
 #include "amplifier.h"
 
-Amplifier::Amplifier(const char* filePath, AmplifierController *ac)
+Amplifier::Amplifier(const char* filePath, AmplifierController *ac, std::mutex* mtx)
 {
 	buf[0] = 0;
 	buf[1] = 0;
 	buf[2] = 0;
 	buf[3] = 0;
 	buf[4] = 0;
+	this->codeMtx = mtx;
 	for (int i = 0; i < 5; i++)
 	{
 		this->intcoders[i] = Intcoder(filePath);
@@ -22,7 +23,7 @@ void Amplifier::run()
 	std::condition_variable cv[5];
 	std::thread threads[5];
 
-	int size = ac->codes.size();
+	//int size = ac->codes.size();
 
 	//pop code from queue
 	std::string code = ac->readCode();
@@ -38,7 +39,7 @@ void Amplifier::run()
 
 	sem_used[0].give();
 	bool done = false;
-	while (ac->signals.size() != size)
+	while (!done)
 	{
 		if (loopDone)
 		{
@@ -51,20 +52,16 @@ void Amplifier::run()
 				setCode(code);
 				sem_used[0].give();
 			}
+			else done = true;
 		
 		}
 	}
 	//terminate threads
 	sem_free[0].take();
 	buf[0] = -1;
-	done = true;
 	setCode("");
 	sem_used[0].give();
 	for (int i = 0; i < 5; i++) threads[i].join();
-
-	int max = ac->getMaxSignal();
-	printf("Max: %i\n", max);
-
 }
 
 void Amplifier::intcoderProcess(int coderIndex)
@@ -156,13 +153,13 @@ void Amplifier::intcoderProcess(int coderIndex)
 
 std::string Amplifier::getCode()
 {
-	std::scoped_lock<std::mutex> lock(codeMtx);
+	std::scoped_lock<std::mutex> lock(*codeMtx);
 	return this->code;
 	
 }
 
 void Amplifier::setCode(std::string code)
 {
-	std::scoped_lock<std::mutex> lock(codeMtx);
+	std::scoped_lock<std::mutex> lock(*codeMtx);
 	this->code = code;
 }

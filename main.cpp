@@ -10,8 +10,5 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 	AmplifierController ac = AmplifierController();
-	Amplifier a(argv[1], &ac);
-	std::thread t1(&Amplifier::run, &a);
-	t1.join();
-
+	ac.run(argv[1]);
 }

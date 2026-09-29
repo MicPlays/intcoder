@@ -10,6 +10,8 @@
 #include "semaphore.h"
 #include "amplifiercontroller.h"
 
+class AmplifierController;
+
 class Amplifier {
 	private:
 		std::string code;
@@ -17,7 +19,7 @@ class Amplifier {
 	public:
 
 		Amplifier() {}
-		Amplifier(const char* filepath, AmplifierController *ac); 
+		Amplifier(const char* filepath, AmplifierController *ac, std::mutex *mtx); 
 
 		Intcoder intcoders[5];
 
@@ -28,7 +30,7 @@ class Amplifier {
 
 		int buf[5];
 
-		std::mutex codeMtx;
+		std::mutex* codeMtx;
 		
 		AmplifierController *ac;		
 

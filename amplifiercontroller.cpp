@@ -25,6 +25,23 @@ void AmplifierController::generateCodes()
 	
 }
 
+void AmplifierController::run(const char* filePath)
+{
+	std::mutex codeMtx[5];
+	Amplifier amps[5];
+	std::thread threads[5];
+	int size = codes.size();
+	for (int i = 0; i < 5; i++)
+	{
+		amps[i] = Amplifier(filePath, this, &codeMtx[i]);
+		threads[i] = std::thread(&Amplifier::run, &amps[i]);
+	}
+	while (signals.size() != size) {}
+	for (int i = 0; i < 5; i++) threads[i].join();
+	int max = getMaxSignal();
+	printf("Max: %i\n", max);
+}
+
 int AmplifierController::getMaxSignal()
 {
 	int max = signals[0];
