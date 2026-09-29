@@ -9,7 +9,7 @@ AmplifierController::AmplifierController()
 
 void AmplifierController::generateCodes()
 {
-	/*
+	
 	int queueSize = q.size();
 	for (int i = 0; i < queueSize; i++)
 	{
@@ -22,8 +22,7 @@ void AmplifierController::generateCodes()
 		else generateCodes();
 		q.push(s.pop());
 	}
-	*/
-	this->codes.push("98765");
+	
 }
 
 int AmplifierController::getMaxSignal()

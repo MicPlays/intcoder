@@ -40,34 +40,31 @@ void Amplifier::run()
 	bool done = false;
 	while (ac->signals.size() != size)
 	{
-		if (getCode() == "")
+		if (loopDone)
 		{
 			if (!ac->codes.empty())
 			{
-				if (loopDone)
-				{
-					//sem_free[0].take();
-					//code = ac->readCode();
-					//setCode(code);
-					//sem_used[0].give();
-				}
-			}
-			else if (!done)
-			{
 				sem_free[0].take();
-				buf[0] = -1;
-				done = true;
-				setCode("");
+				buf[0] = 0;
+				loopDone = false;
+				code = ac->readCode();
+				setCode(code);
 				sem_used[0].give();
 			}
+		
 		}
 	}
+	//terminate threads
+	sem_free[0].take();
+	buf[0] = -1;
+	done = true;
+	setCode("");
+	sem_used[0].give();
+	for (int i = 0; i < 5; i++) threads[i].join();
+
 	int max = ac->getMaxSignal();
 	printf("Max: %i\n", max);
-	for (int i = 0; i < 5; i++)
-	{
-		threads[i].join();	
-	}
+
 }
 
 void Amplifier::intcoderProcess(int coderIndex)
@@ -76,8 +73,6 @@ void Amplifier::intcoderProcess(int coderIndex)
 	{
 		//consume input in buffer
 		sem_used[coderIndex].take();
-
-		printf("Thread %i working\n", coderIndex);
 
 		//termination condition
 		int input = buf[coderIndex];
@@ -115,7 +110,6 @@ void Amplifier::intcoderProcess(int coderIndex)
 			//strip leading digit of code
 			if (useCode) setCode(codeCopy.substr(1));
 			//write output to next buffer
-			printf("Thread %i writing output\n", coderIndex);
 			buf[coderIndex + 1] = output;
 			
 			if (intcoders[coderIndex].done)
@@ -128,21 +122,19 @@ void Amplifier::intcoderProcess(int coderIndex)
 			sem_used[coderIndex + 1].give();
 			sem_free[coderIndex].give();
 
-			printf("Thread %i done, giving back mutex\n", coderIndex);
-
 		}
 		else 
 		{
-			sem_free[0].take();
-			//done with code
-			if (useCode) setCode("");
-
-			//write output to starting buffer
 			if (!intcoders[coderIndex].done)
 			{
-				printf("Thread %i writing output to starting buffer\n", coderIndex);
-				buf[0] = output;
+				sem_free[0].take();
+				
+				//done with code
+				if (useCode) setCode("");
 
+				//write output to starting buffer
+				buf[0] = output;
+				
 				//notify we are ready to receive another input
 				sem_used[0].give();
 				sem_free[coderIndex].give();
@@ -150,12 +142,12 @@ void Amplifier::intcoderProcess(int coderIndex)
 			}
 			else 
 			{
-				printf("Thread %i writing out signal\n", coderIndex);
+				//write output to amplifier controller
 				ac->writeSignal(output);
-				printf("%i\n", output);
 				intcoders[coderIndex].clearBuffers();
 				intcoders[coderIndex].loadProgram();
 				loopDone = true;
+				//notify this intcoder is free for more input
 				sem_free[coderIndex].give();
 			}
 		}
